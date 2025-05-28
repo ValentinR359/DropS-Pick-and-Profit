@@ -58,13 +58,17 @@
     button {
       background-color: #0056b3;
       color: white;
-      padding: 10px 20px;
+      padding: 6px 12px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      margin: 2px;
     }
     button:hover {
       background-color: #004494;
+    }
+    .view-table {
+      margin-top: 40px;
     }
   </style>
 </head>
@@ -121,9 +125,44 @@
 
       <button type="submit">Enviar</button>
     </form>
+
+    <div class="view-table">
+      <h2>Productos Registrados</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Nicho</th>
+            <th>Proveedor</th>
+            <th>Costo</th>
+            <th>Inventario</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="productList"></tbody>
+      </table>
+    </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdjF6avGFUYuHOw8AKvBpDoq7FAnIqL3Y",
+      authDomain: "trial-ia-1275b.firebaseapp.com",
+      projectId: "trial-ia-1275b",
+      storageBucket: "trial-ia-1275b.firebasestorage.app",
+      messagingSenderId: "652433758178",
+      appId: "1:652433758178:web:9f719543f90836eaa94bbb",
+      measurementId: "G-WGD76XMDLP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
     const criterios = [
       "¿Qué problema resuelve?",
       "¿Tiene un Factor WOW?",
@@ -149,8 +188,10 @@
       evaluationTable.appendChild(row);
     });
 
-    document.getElementById('productForm').addEventListener('submit', function(e) {
+    document.getElementById('productForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      const form = e.target;
+      const editId = form.dataset.editId;
 
       const formData = {
         productName: document.getElementById('productName').value,
@@ -163,33 +204,67 @@
         criterios: criterios.map((_, i) => document.querySelector(`input[name='criterio${i}']:checked`)?.value || '')
       };
 
-      fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
-      })
-      .then(() => alert('Producto registrado correctamente.'))
-      .catch(err => alert('Error al registrar: ' + err));
+      try {
+        if (editId) {
+          await setDoc(doc(db, "productos", editId), formData);
+          alert('Producto actualizado.');
+          delete form.dataset.editId;
+          document.querySelector('button[type="submit"]').textContent = 'Enviar';
+        } else {
+          await addDoc(collection(db, "productos"), formData);
+          logEvent(analytics, 'submit_form');
+          alert('Producto registrado en Firebase correctamente.');
+        }
+        form.reset();
+        cargarProductos();
+      } catch (error) {
+        alert('Error al guardar: ' + error);
+      }
     });
-  </script>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAdjF6avGFUYuHOw8AKvBpDoq7FAnIqL3Y",
-      authDomain: "trial-ia-1275b.firebaseapp.com",
-      projectId: "trial-ia-1275b",
-      storageBucket: "trial-ia-1275b.firebasestorage.app",
-      messagingSenderId: "652433758178",
-      appId: "1:652433758178:web:9f719543f90836eaa94bbb",
-      measurementId: "G-WGD76XMDLP"
+    window.eliminarProducto = async function(id) {
+      if (confirm("¿Estás seguro de eliminar este producto?")) {
+        await deleteDoc(doc(db, "productos", id));
+        cargarProductos();
+      }
     };
 
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
+    window.editarProducto = function(id, nombre, nicho, proveedor, costo, inventario, telefono, correo) {
+      document.getElementById('productName').value = decodeURIComponent(nombre);
+      document.getElementById('productNiche').value = decodeURIComponent(nicho);
+      document.getElementById('supplier').value = decodeURIComponent(proveedor);
+      document.getElementById('cost').value = decodeURIComponent(costo);
+      document.getElementById('inventory').value = decodeURIComponent(inventario);
+      document.getElementById('phone').value = decodeURIComponent(telefono);
+      document.getElementById('email').value = decodeURIComponent(correo);
+      document.getElementById('productForm').dataset.editId = id;
+      document.querySelector('button[type="submit"]').textContent = 'Actualizar';
+    };
+
+    async function cargarProductos() {
+      const querySnapshot = await getDocs(collection(db, "productos"));
+      const tableBody = document.getElementById("productList");
+      tableBody.innerHTML = "";
+
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${data.productName}</td>
+          <td>${data.productNiche}</td>
+          <td>${data.supplier}</td>
+          <td>${data.cost}</td>
+          <td>${data.inventory}</td>
+          <td>
+            <button onclick="editarProducto('${docSnap.id}', '${encodeURIComponent(data.productName)}', '${encodeURIComponent(data.productNiche)}', '${encodeURIComponent(data.supplier)}', '${encodeURIComponent(data.cost)}', '${encodeURIComponent(data.inventory)}', '${encodeURIComponent(data.phone)}', '${encodeURIComponent(data.email)}')">Editar</button>
+            <button onclick="eliminarProducto('${docSnap.id}')">Eliminar</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    cargarProductos();
   </script>
 </body>
 
