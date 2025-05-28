@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pick And Profit</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f9ff;
+      margin: 0;
+      padding: 0;
+      color: #002d62;
+    }
+    header {
+      background-color: #0056b3;
+      padding: 20px;
+      color: white;
+      text-align: center;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 30px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #e0ecff;
+    }
+    button {
+      background-color: #0056b3;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004494;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Pick And Profit</h1>
+    <p>No sigas la tendencia. Elígela antes que todos.</p>
+  </header>
+
+  <div class="container">
+    <h2>Formulario de Producto</h2>
+    <form id="productForm">
+      <div class="form-group">
+        <label for="productName">Nombre del producto</label>
+        <input type="text" id="productName">
+      </div>
+      <div class="form-group">
+        <label for="productNiche">Nicho de producto</label>
+        <input type="text" id="productNiche">
+      </div>
+      <div class="form-group">
+        <label for="supplier">Proveedor</label>
+        <input type="text" id="supplier">
+      </div>
+      <div class="form-group">
+        <label for="cost">Costo</label>
+        <input type="number" id="cost">
+      </div>
+      <div class="form-group">
+        <label for="inventory">Inventario</label>
+        <input type="number" id="inventory">
+      </div>
+      <div class="form-group">
+        <label for="phone">Teléfono</label>
+        <input type="tel" id="phone">
+      </div>
+      <div class="form-group">
+        <label for="email">Correo</label>
+        <input type="email" id="email">
+      </div>
+
+      <h2>Evaluación del Producto</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Criterio</th>
+            <th>OK</th>
+            <th>NA</th>
+          </tr>
+        </thead>
+        <tbody id="evaluationTable"></tbody>
+      </table>
+
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
+
+  <script>
+    const criterios = [
+      "¿Qué problema resuelve?",
+      "¿Tiene un Factor WOW?",
+      "¿Se entiende su función rápido?",
+      "¿Tiene una audiencia grande para venderlo?",
+      "¿Buen margen de ganancia?",
+      "¿Hay material para anuncios en internet?",
+      "¿Está saturado el mercado?",
+      "¿Es producto tendencia en redes sociales?",
+      "¿Ha sido winner en USA u otros países?",
+      "¿Lo encuentro con algún proveedor local?",
+      "¿Se vende todos los días?"
+    ];
+
+    const evaluationTable = document.getElementById('evaluationTable');
+    criterios.forEach((criterio, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${criterio}</td>
+        <td><input type="radio" name="criterio${index}" value="OK"></td>
+        <td><input type="radio" name="criterio${index}" value="NA"></td>
+      `;
+      evaluationTable.appendChild(row);
+    });
+
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const formData = {
+        productName: document.getElementById('productName').value,
+        productNiche: document.getElementById('productNiche').value,
+        supplier: document.getElementById('supplier').value,
+        cost: document.getElementById('cost').value,
+        inventory: document.getElementById('inventory').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        criterios: criterios.map((_, i) => document.querySelector(`input[name='criterio${i}']:checked`)?.value || '')
+      };
+
+      fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      })
+      .then(() => alert('Producto registrado correctamente.'))
+      .catch(err => alert('Error al registrar: ' + err));
+    });
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdjF6avGFUYuHOw8AKvBpDoq7FAnIqL3Y",
+      authDomain: "trial-ia-1275b.firebaseapp.com",
+      projectId: "trial-ia-1275b",
+      storageBucket: "trial-ia-1275b.firebasestorage.app",
+      messagingSenderId: "652433758178",
+      appId: "1:652433758178:web:9f719543f90836eaa94bbb",
+      measurementId: "G-WGD76XMDLP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+</body>
+
+</html>
